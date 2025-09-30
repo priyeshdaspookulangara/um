@@ -10,10 +10,15 @@ if (!isset($_SESSION["user_id"])) {
 
 $full_name = $_SESSION['full_name'];
 
-// Fetch all orders
+// Fetch all orders with customer names
 $connection = db_connect();
 $orders = [];
-$orders_query = "SELECT id, customer_name, order_date, total_amount FROM orders ORDER BY order_date DESC";
+$orders_query = "
+    SELECT o.order_id, o.order_date, o.total_amount, o.is_paid, c.customer_name
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.customer_id
+    ORDER BY o.order_date DESC
+";
 $orders_result = mysqli_query($connection, $orders_query);
 if ($orders_result) {
     while ($row = mysqli_fetch_assoc($orders_result)) {
@@ -21,6 +26,17 @@ if ($orders_result) {
     }
 }
 mysqli_close($connection);
+
+// Helper function to determine badge color for payment status
+function get_status_badge_class($status) {
+    switch (strtolower($status)) {
+        case 'paid': return 'bg-success';
+        case 'pending': return 'bg-warning text-dark';
+        case 'partially': return 'bg-info text-dark';
+        case 'error': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,15 +49,12 @@ mysqli_close($connection);
     <style>
         body { background-color: #f8f9fa; }
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); }
-        .main-content { margin-left: 220px; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="dashboard.php">Siva Ganga Dashboard</a>
-    </div>
+    <div class="container-fluid"><a class="navbar-brand" href="dashboard.php">Siva Ganga Dashboard</a></div>
 </nav>
 
 <div class="container-fluid">
@@ -49,18 +62,10 @@ mysqli_close($connection);
         <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
             <div class="position-sticky pt-3">
                 <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard.php"><i class="bi bi-list-task"></i> My Tasks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="attendance_log.php"><i class="bi bi-calendar-check"></i> Attendance Log</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="orders.php"><i class="bi bi-box-seam"></i> Order Management</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-list-task"></i> My Tasks</a></li>
+                    <li class="nav-item"><a class="nav-link" href="attendance_log.php"><i class="bi bi-calendar-check"></i> Attendance Log</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="orders.php"><i class="bi bi-box-seam"></i> Order Management</a></li>
                 </ul>
                 <hr>
                 <div class="dropdown p-3">
@@ -88,23 +93,27 @@ mysqli_close($connection);
                             <th scope="col">Customer Name</th>
                             <th scope="col">Order Date</th>
                             <th scope="col">Total Amount</th>
+                            <th scope="col">Payment Status</th>
                             <th scope="col">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($orders)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center">No orders found.</td>
-                            </tr>
+                            <tr><td colspan="6" class="text-center">No orders found.</td></tr>
                         <?php else: ?>
                             <?php foreach ($orders as $order): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($order['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['order_id']); ?></td>
                                     <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
                                     <td><?php echo date("Y-m-d H:i", strtotime($order['order_date'])); ?></td>
-                                    <td>$<?php echo number_format($order['total_amount'], 2); ?></td>
+                                    <td>$<?php echo number_format($order['total_amount']); ?></td>
                                     <td>
-                                        <button type="button" class="btn btn-primary btn-sm view-details-btn" data-order-id="<?php echo $order['id']; ?>">
+                                        <span class="badge <?php echo get_status_badge_class($order['is_paid']); ?>">
+                                            <?php echo htmlspecialchars(ucfirst($order['is_paid'])); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-primary btn-sm view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">
                                             View Details
                                         </button>
                                     </td>
@@ -126,31 +135,12 @@ mysqli_close($connection);
                 <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <!-- Content will be loaded here via AJAX -->
-                <div id="modal-content-loading" class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <div id="modal-content-display" style="display: none;">
-                    <h4>Order Information</h4>
-                    <p><strong>Order ID:</strong> <span id="modal-order-id"></span></p>
-                    <p><strong>Customer:</strong> <span id="modal-customer-name"></span></p>
-                    <p><strong>Date:</strong> <span id="modal-order-date"></span></p>
-                    <p><strong>Total:</strong> <span id="modal-total-amount"></span></p>
-
-                    <hr>
-                    <h4>Items Purchased</h4>
-                    <ul id="modal-item-list" class="list-group"></ul>
-
-                    <hr>
-                    <h4>Linked Task</h4>
-                    <div id="modal-task-details"></div>
-                </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- AJAX content will be loaded here -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="update-status-btn" style="display: none;">Update Status</button>
             </div>
         </div>
     </div>
@@ -160,61 +150,96 @@ mysqli_close($connection);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
+    var currentOrderId;
+    var orderDetailsModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+
+    // Handle "View Details" button click
     $('.view-details-btn').on('click', function() {
-        var orderId = $(this).data('order-id');
-        var modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+        currentOrderId = $(this).data('order-id');
+        var modalBody = $('#modal-body-content');
+        var updateBtn = $('#update-status-btn');
 
-        // Reset and show loading spinner
-        $('#modal-content-display').hide();
-        $('#modal-content-loading').show();
-        $('#modal-item-list').empty();
-        $('#modal-task-details').empty();
+        // Show loading spinner
+        modalBody.html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        updateBtn.hide();
+        orderDetailsModal.show();
 
-        modal.show();
-
+        // Fetch order details
         $.ajax({
             url: 'get_order_details.php',
             type: 'GET',
-            data: { order_id: orderId },
+            data: { order_id: currentOrderId },
             dataType: 'json',
             success: function(response) {
-                // Populate Order Info
-                $('#modal-order-id').text(response.order.id);
-                $('#modal-customer-name').text(response.order.customer_name);
-                $('#modal-order-date').text(new Date(response.order.order_date).toLocaleString());
-                $('#modal-total-amount').text('$' + parseFloat(response.order.total_amount).toFixed(2));
+                let content = `
+                    <div id="status-update-alert"></div>
+                    <h4>Order Information</h4>
+                    <p><strong>Order ID:</strong> ${response.order.order_id}</p>
+                    <p><strong>Customer:</strong> ${response.order.customer_name}</p>
+                    <p><strong>Date:</strong> ${new Date(response.order.order_date).toLocaleString()}</p>
+                    <p><strong>Total:</strong> $${parseInt(response.order.total_amount).toFixed(2)}</p>
+                    <hr>
+                    <h4>Items Purchased</h4>
+                    <ul class="list-group mb-3">`;
 
-                // Populate Items
                 if (response.items.length > 0) {
-                    $.each(response.items, function(index, item) {
-                        $('#modal-item-list').append('<li class="list-group-item">Item: ' + item.item_id + ' | Quantity: ' + item.quantity + '</li>');
+                    response.items.forEach(item => {
+                        content += `<li class="list-group-item">Item: ${item.item_id} | Quantity: ${item.quantity}</li>`;
                     });
                 } else {
-                    $('#modal-item-list').append('<li class="list-group-item">No items found for this order.</li>');
+                    content += '<li class="list-group-item">No items found.</li>';
                 }
+                content += '</ul><hr><h4>Linked Task</h4>';
 
-                // Populate Task Info
                 if (response.task) {
-                    var taskHtml = '<p><strong>Task ID:</strong> ' + response.task.id + '</p>' +
-                                   '<p><strong>Assigned To:</strong> ' + response.task.assigned_to + '</p>' +
-                                   '<p><strong>Type:</strong> ' + response.task.task_type + '</p>' +
-                                   '<p><strong>Description:</strong> ' + response.task.description + '</p>' +
-                                   '<p><strong>Status:</strong> <span class="badge bg-info">' + response.task.conversation_status + '</span></p>';
-                    $('#modal-task-details').html(taskHtml);
+                    content += `<p><strong>Task:</strong> ${response.task.description} (${response.task.conversation_status})</p>`;
                 } else {
-                    $('#modal-task-details').html('<p class="text-muted">No task is linked to this order.</p>');
+                    content += '<p class="text-muted">No task linked.</p>';
                 }
 
-                // Hide loading and show content
-                $('#modal-content-loading').hide();
-                $('#modal-content-display').show();
+                content += `<hr><h4>Update Payment Status</h4>
+                            <div class="input-group">
+                                <select class="form-select" id="order-status-select">
+                                    <option value="pending" ${response.order.is_paid === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="paid" ${response.order.is_paid === 'paid' ? 'selected' : ''}>Paid</option>
+                                    <option value="partially" ${response.order.is_paid === 'partially' ? 'selected' : ''}>Partially</option>
+                                    <option value="error" ${response.order.is_paid === 'error' ? 'selected' : ''}>Error</option>
+                                </select>
+                            </div>`;
+
+                modalBody.html(content);
+                updateBtn.show();
             },
-            error: function(xhr, status, error) {
-                var errorMessage = 'Error loading order details.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = xhr.responseJSON.error;
+            error: function() {
+                modalBody.html('<div class="alert alert-danger">Error loading order details.</div>');
+            }
+        });
+    });
+
+    // Handle "Update Status" button click
+    $('#update-status-btn').on('click', function() {
+        var newStatus = $('#order-status-select').val();
+
+        $.ajax({
+            url: 'update_order_status.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ order_id: currentOrderId, status: newStatus }),
+            dataType: 'json',
+            success: function(response) {
+                let alertClass = response.success ? 'alert-success' : 'alert-danger';
+                $('#status-update-alert').html(`<div class="alert ${alertClass}">${response.message}</div>`).fadeIn().delay(3000).fadeOut();
+                // Optionally, refresh the main page's order list after a short delay
+                if(response.success) {
+                    setTimeout(() => location.reload(), 1000);
                 }
-                $('#modal-content-loading').html('<div class="alert alert-danger">' + errorMessage + '</div>');
+            },
+            error: function(xhr) {
+                let errorMsg = 'An unknown error occurred.';
+                if(xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                $('#status-update-alert').html(`<div class="alert alert-danger">${errorMsg}</div>`).fadeIn().delay(3000).fadeOut();
             }
         });
     });

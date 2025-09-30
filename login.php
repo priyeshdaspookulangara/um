@@ -21,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $connection = db_connect();
 
         // IMPORTANT: Non-prepared statement as requested.
-        // In a real-world scenario, this is highly insecure and vulnerable to SQL injection.
         $username_safe = mysqli_real_escape_string($connection, $username);
         $password_safe = mysqli_real_escape_string($connection, $password);
 

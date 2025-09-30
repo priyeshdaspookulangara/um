@@ -4,17 +4,15 @@ header('Content-Type: application/json');
 require_once 'db.php';
 
 // Basic error response function
-function send_error($message) {
-    http_response_code(400);
+function send_error($message, $code = 400) {
+    http_response_code($code);
     echo json_encode(['error' => $message]);
     exit();
 }
 
 // Check if user is logged in
 if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit();
+    send_error('Unauthorized', 401);
 }
 
 // Check if order_id is provided
@@ -36,14 +34,19 @@ $response = [
     'task' => null
 ];
 
-// 1. Fetch main order details
-$order_query = "SELECT id, customer_name, order_date, total_amount FROM orders WHERE id = '$order_id_safe'";
+// 1. Fetch main order details with customer name
+$order_query = "
+    SELECT o.order_id, o.order_date, o.total_amount, o.is_paid, c.customer_name
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.customer_id
+    WHERE o.order_id = '$order_id_safe'
+";
 $order_result = mysqli_query($connection, $order_query);
 if ($order_result && mysqli_num_rows($order_result) > 0) {
     $response['order'] = mysqli_fetch_assoc($order_result);
 } else {
     mysqli_close($connection);
-    send_error('Order not found.');
+    send_error('Order not found.', 404);
 }
 
 // 2. Fetch order items (details)
