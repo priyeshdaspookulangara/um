@@ -104,13 +104,18 @@ mysqli_close($connection);
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="dashboard.php">
                             <i class="bi bi-list-task"></i> My Tasks
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="attendance_log.php">
                             <i class="bi bi-calendar-check"></i> Attendance Log
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="orders.php">
+                            <i class="bi bi-box-seam"></i> Order Management
                         </a>
                     </li>
                 </ul>
@@ -180,7 +185,7 @@ mysqli_close($connection);
                                         </form>
                                         <form action="update_task.php" method="POST" class="d-inline">
                                             <input type="hidden" name="task_id" value="<?php echo $task['id']; ?>">
-                                            <input type="hidden" name="action" value="toggle_payment">
+                                            <input type="hidden" name="action" value="mark_paid">
                                             <button type="submit" class="btn btn-sm btn-info" <?php if ($task['payment_made']) echo 'disabled'; ?>>
                                                 Mark as Paid
                                             </button>

@@ -9,7 +9,7 @@ require_once 'db.php';
  * @param string $target_customer The customer associated with the task.
  * @return bool True on success, false on failure.
  */
-function assign_task_to_user($task_type, $description, $target_customer) {
+function assign_task_to_user($task_type, $description, $target_customer, $order_id = null) {
     $connection = db_connect();
 
     // This query finds the user with the minimum number of tasks that are NOT 'DONE'.
@@ -35,10 +35,11 @@ function assign_task_to_user($task_type, $description, $target_customer) {
         $description_safe = mysqli_real_escape_string($connection, $description);
         $target_customer_safe = mysqli_real_escape_string($connection, $target_customer);
         $assigned_user_id_safe = mysqli_real_escape_string($connection, $assigned_user_id);
+        $order_id_safe = ($order_id !== null) ? "'" . mysqli_real_escape_string($connection, $order_id) . "'" : "NULL";
 
         $insert_query = "
-            INSERT INTO tasks (assigned_user_id, task_type, description, target_customer)
-            VALUES ('$assigned_user_id_safe', '$task_type_safe', '$description_safe', '$target_customer_safe')
+            INSERT INTO tasks (assigned_user_id, task_type, description, target_customer, order_id)
+            VALUES ('$assigned_user_id_safe', '$task_type_safe', '$description_safe', '$target_customer_safe', $order_id_safe)
         ";
 
         $insert_result = mysqli_query($connection, $insert_query);

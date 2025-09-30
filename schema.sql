@@ -31,3 +31,25 @@ CREATE TABLE `attendance` (
   UNIQUE KEY `user_day` (`user_id`, `login_date`),
   FOREIGN KEY (`user_id`) REFERENCES `staff_users`(`id`) ON DELETE CASCADE
 );
+
+-- Table for customer orders
+CREATE TABLE `orders` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `customer_name` VARCHAR(255) NOT NULL,
+  `order_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `total_amount` DECIMAL(10, 2) NOT NULL
+);
+
+-- Table for items within an order
+CREATE TABLE `order_details` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_id` INT NOT NULL,
+  `item_id` VARCHAR(255) NOT NULL, -- e.g., a product SKU
+  `quantity` INT NOT NULL,
+  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+);
+
+-- Add order_id to tasks table
+ALTER TABLE `tasks`
+ADD COLUMN `order_id` INT NULL,
+ADD FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE SET NULL;

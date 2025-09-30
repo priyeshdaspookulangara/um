@@ -35,9 +35,9 @@ if ($task_id > 0 && $action) {
         if ($action === 'toggle_status') {
             // This logic allows toggling between 'PENDING' and 'DONE'
             $update_query = "UPDATE tasks SET conversation_status = IF(conversation_status = 'DONE', 'PENDING', 'DONE') WHERE id = '$task_id_safe'";
-        } elseif ($action === 'toggle_payment') {
-            // This logic toggles the payment status between 0 and 1
-            $update_query = "UPDATE tasks SET payment_made = 1 - payment_made WHERE id = '$task_id_safe'";
+        } elseif ($action === 'mark_paid') {
+            // This logic sets the payment status to 1 (paid)
+            $update_query = "UPDATE tasks SET payment_made = 1 WHERE id = '$task_id_safe'";
         }
 
         if ($update_query) {
