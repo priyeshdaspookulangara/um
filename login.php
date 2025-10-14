@@ -22,23 +22,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // IMPORTANT: Non-prepared statement as requested.
         $username_safe = mysqli_real_escape_string($connection, $username);
-        $password_safe = mysqli_real_escape_string($connection, $password);
 
-        $query = "SELECT id, username, full_name FROM staff_users WHERE username = '$username_safe' AND password = '$password_safe' AND is_active = 1";
+        $query = "SELECT id, username, password, full_name FROM staff_users WHERE username = '$username_safe' AND is_active = 1";
 
         $result = mysqli_query($connection, $query);
 
         if ($result && mysqli_num_rows($result) === 1) {
             $user = mysqli_fetch_assoc($result);
 
-            // Store user data in session
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['full_name'] = $user['full_name'];
+            if (password_verify($password, $user['password'])) {
+                // Store user data in session
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'];
 
-            // Redirect to dashboard, which will handle attendance
-            header("Location: dashboard.php");
-            exit();
+                // Redirect to dashboard, which will handle attendance
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                $error_message = "Invalid username or password.";
+            }
         } else {
             $error_message = "Invalid username or password.";
         }
