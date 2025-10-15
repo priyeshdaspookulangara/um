@@ -58,13 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all team members
 $team_members = [];
-$query = "SELECT id, full_name, designation, photo_path, is_active FROM staff_users";
-$result = mysqli_query($connection, $query);
+$stmt = $connection->prepare("SELECT id, full_name, designation, photo_path, is_active FROM staff_users");
+$stmt->execute();
+$result = $stmt->get_result();
 if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
+    while ($row = $result->fetch_assoc()) {
         $team_members[] = $row;
     }
 }
+$stmt->close();
 
 mysqli_close($connection);
 ?>
@@ -212,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var passwordInput = memberModal.querySelector('#password');
         var fullNameInput = memberModal.querySelector('#fullName');
         var designationInput = memberModal.querySelector('#designation');
-        var photoPathInput = memberModal.querySelector('#photoPath');
+        var existingPhotoPathInput = memberModal.querySelector('#existingPhotoPath');
 
         if (memberId) {
             // Editing existing member
@@ -223,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
             memberIdInput.value = memberId;
             fullNameInput.value = button.getAttribute('data-full-name');
             designationInput.value = button.getAttribute('data-designation');
-            photoPathInput.value = button.getAttribute('data-photo-path');
+            existingPhotoPathInput.value = button.getAttribute('data-photo-path');
         } else {
             // Creating new member
             modalTitle.textContent = 'Create New Member';
@@ -233,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
             memberIdInput.value = '';
             fullNameInput.value = '';
             designationInput.value = '';
-            photoPathInput.value = '';
+            existingPhotoPathInput.value = '';
         }
     });
 });
