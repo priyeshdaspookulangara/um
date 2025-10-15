@@ -65,7 +65,7 @@ if (!$post) {
             </p>
             <hr>
             <div>
-                <?php echo nl2br(htmlspecialchars($post['content'])); ?>
+                <?php echo $post['content']; ?>
             </div>
             <a href="blog.php" class="btn btn-secondary mt-4">Back to Blog</a>
         </div>

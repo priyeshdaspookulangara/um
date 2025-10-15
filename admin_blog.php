@@ -13,11 +13,17 @@ $full_name = $_SESSION['full_name'];
 
 $connection = db_connect();
 
+require_once 'vendor/autoload.php';
+
 // Handle form submissions for creating/editing posts
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['save_post'])) {
         $title = mysqli_real_escape_string($connection, $_POST['title']);
-        $content = mysqli_real_escape_string($connection, $_POST['content']);
+
+        $config = HTMLPurifier_Config::createDefault();
+        $purifier = new HTMLPurifier($config);
+        $content = $purifier->purify($_POST['content']);
+
         $status = mysqli_real_escape_string($connection, $_POST['status']);
         $post_id = isset($_POST['post_id']) ? (int)$_POST['post_id'] : null;
 
@@ -181,8 +187,15 @@ mysqli_close($connection);
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    tinymce.init({
+        selector: '#content',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+    });
+
     var postModal = document.getElementById('postModal');
     postModal.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget;
@@ -190,20 +203,20 @@ document.addEventListener('DOMContentLoaded', function () {
         var modalTitle = postModal.querySelector('.modal-title');
         var postIdInput = postModal.querySelector('#postId');
         var titleInput = postModal.querySelector('#title');
-        var contentInput = postModal.querySelector('#content');
+        var contentInput = tinymce.get('content');
         var statusInput = postModal.querySelector('#status');
 
         if (postId) {
             modalTitle.textContent = 'Edit Post';
             postIdInput.value = postId;
             titleInput.value = button.getAttribute('data-title');
-            contentInput.value = button.getAttribute('data-content');
+            contentInput.setContent(button.getAttribute('data-content'));
             statusInput.value = button.getAttribute('data-status');
         } else {
             modalTitle.textContent = 'Create New Post';
             postIdInput.value = '';
             titleInput.value = '';
-            contentInput.value = '';
+            contentInput.setContent('');
             statusInput.value = 'draft';
         }
     });
