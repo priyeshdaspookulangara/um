@@ -72,7 +72,6 @@ mysqli_close($connection);
                     <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-list-task"></i> My Tasks</a></li>
                     <li class="nav-item"><a class="nav-link" href="attendance_log.php"><i class="bi bi-calendar-check"></i> Attendance Log</a></li>
                     <li class="nav-item"><a class="nav-link" href="orders.php"><i class="bi bi-box-seam"></i> Order Management</a></li>
-                    <li class="nav-item"><a class="nav-link" href="admin_blog.php"><i class="bi bi-pencil-square"></i> Blog Management</a></li>
                 </ul>
                 <hr>
                 <div class="dropdown p-3">

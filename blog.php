@@ -44,7 +44,8 @@ mysqli_close($connection);
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                <li class="nav-item"><a class="nav-link active" aria-current="page" href="blog.php">Blog</a></li>
+                <li class="nav-item"><a class="nav-link" href="blog.php">Blog</a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="testimonials.php">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="login.php">Staff Login</a></li>
             </ul>
         </div>
