@@ -16,17 +16,31 @@ $connection = db_connect();
 // Handle form submissions for creating/editing/deleting team members
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['save_member'])) {
-        $full_name = mysqli_real_escape_string($connection, $_POST['full_name']);
-        $designation = mysqli_real_escape_string($connection, $_POST['designation']);
-        $photo_path = mysqli_real_escape_string($connection, $_POST['photo_path']);
+        $full_name = $_POST['full_name'];
+        $designation = $_POST['designation'];
         $member_id = isset($_POST['member_id']) ? (int)$_POST['member_id'] : null;
+        $photo_path = $_POST['existing_photo_path']; // Default to existing path
+
+        // Handle file upload
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] == UPLOAD_ERR_OK) {
+            $upload_dir = 'team_images/';
+            $file_name = basename($_FILES['photo']['name']);
+            $target_file = $upload_dir . $file_name;
+            if (move_uploaded_file($_FILES['photo']['tmp_name'], $target_file)) {
+                $photo_path = $target_file;
+            }
+        }
 
         if ($member_id) {
             // Update existing member
             $stmt = $connection->prepare("UPDATE staff_users SET full_name = ?, designation = ?, photo_path = ? WHERE id = ?");
             $stmt->bind_param("sssi", $full_name, $designation, $photo_path, $member_id);
         } else {
-            // Create new member - for now, we only edit existing users as team members
+            // Create new member
+            $username = $_POST['username'];
+            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+            $stmt = $connection->prepare("INSERT INTO staff_users (username, password, full_name, designation, photo_path, is_active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param("sssss", $username, $password, $full_name, $designation, $photo_path);
         }
         $stmt->execute();
         $stmt->close();
@@ -101,6 +115,9 @@ mysqli_close($connection);
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-5">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Team Management</h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#memberModal">
+                    Create New Member
+                </button>
             </div>
 
             <div class="table-responsive">
@@ -141,13 +158,23 @@ mysqli_close($connection);
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="admin_team.php" method="POST">
+            <form action="admin_team.php" method="POST" enctype="multipart/form-data">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="memberModalLabel">Edit Team Member</h5>
+                    <h5 class="modal-title" id="memberModalLabel">Create/Edit Team Member</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="member_id" id="memberId">
+                    <div id="new-member-fields">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label for="fullName" class="form-label">Full Name</label>
                         <input type="text" class="form-control" id="fullName" name="full_name" required>
@@ -157,8 +184,9 @@ mysqli_close($connection);
                         <input type="text" class="form-control" id="designation" name="designation" required>
                     </div>
                     <div class="mb-3">
-                        <label for="photoPath" class="form-label">Photo Path</label>
-                        <input type="text" class="form-control" id="photoPath" name="photo_path">
+                        <label for="photo" class="form-label">Photo</label>
+                        <input type="file" class="form-control" id="photo" name="photo">
+                        <input type="hidden" name="existing_photo_path" id="existingPhotoPath">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -179,14 +207,34 @@ document.addEventListener('DOMContentLoaded', function () {
         var memberId = button.getAttribute('data-member-id');
         var modalTitle = memberModal.querySelector('.modal-title');
         var memberIdInput = memberModal.querySelector('#memberId');
+        var newMemberFields = document.getElementById('new-member-fields');
+        var usernameInput = memberModal.querySelector('#username');
+        var passwordInput = memberModal.querySelector('#password');
         var fullNameInput = memberModal.querySelector('#fullName');
         var designationInput = memberModal.querySelector('#designation');
         var photoPathInput = memberModal.querySelector('#photoPath');
 
-        memberIdInput.value = memberId;
-        fullNameInput.value = button.getAttribute('data-full-name');
-        designationInput.value = button.getAttribute('data-designation');
-        photoPathInput.value = button.getAttribute('data-photo-path');
+        if (memberId) {
+            // Editing existing member
+            modalTitle.textContent = 'Edit Team Member';
+            newMemberFields.style.display = 'none';
+            usernameInput.required = false;
+            passwordInput.required = false;
+            memberIdInput.value = memberId;
+            fullNameInput.value = button.getAttribute('data-full-name');
+            designationInput.value = button.getAttribute('data-designation');
+            photoPathInput.value = button.getAttribute('data-photo-path');
+        } else {
+            // Creating new member
+            modalTitle.textContent = 'Create New Member';
+            newMemberFields.style.display = 'block';
+            usernameInput.required = true;
+            passwordInput.required = true;
+            memberIdInput.value = '';
+            fullNameInput.value = '';
+            designationInput.value = '';
+            photoPathInput.value = '';
+        }
     });
 });
 </script>

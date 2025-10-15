@@ -20,15 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $connection = db_connect();
 
-        // IMPORTANT: Non-prepared statement as requested.
-        $username_safe = mysqli_real_escape_string($connection, $username);
+        $stmt = $connection->prepare("SELECT id, username, password, full_name FROM staff_users WHERE username = ? AND is_active = 1");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        $query = "SELECT id, username, password, full_name FROM staff_users WHERE username = '$username_safe' AND is_active = 1";
-
-        $result = mysqli_query($connection, $query);
-
-        if ($result && mysqli_num_rows($result) === 1) {
-            $user = mysqli_fetch_assoc($result);
+        if ($result && $result->num_rows === 1) {
+            $user = $result->fetch_assoc();
 
             if (password_verify($password, $user['password'])) {
                 // Store user data in session
