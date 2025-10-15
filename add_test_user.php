@@ -14,14 +14,16 @@ function add_test_user() {
     $designation = 'Tester';
     $photo_path = 'team_images/test.png';
 
-    $sql = "INSERT INTO `staff_users` (username, password, full_name, designation, photo_path)
-            VALUES ('$username', '$password', '$full_name', '$designation', '$photo_path')";
+    $stmt = $connection->prepare("INSERT INTO `staff_users` (username, password, full_name, designation, photo_path) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $username, $password, $full_name, $designation, $photo_path);
 
-    if (mysqli_query($connection, $sql)) {
+    if ($stmt->execute()) {
         echo "Test user added successfully.\n";
     } else {
-        echo "Error adding test user: " . mysqli_error($connection) . "\n";
+        echo "Error adding test user: " . $stmt->error . "\n";
     }
+
+    $stmt->close();
 
     mysqli_close($connection);
 }

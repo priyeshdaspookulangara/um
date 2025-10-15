@@ -59,3 +59,15 @@ CREATE TABLE `attendance` (
   UNIQUE KEY `user_day` (`user_id`, `login_date`),
   FOREIGN KEY (`user_id`) REFERENCES `staff_users`(`id`) ON DELETE CASCADE
 );
+
+-- Table for blog posts
+CREATE TABLE `blog_posts` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `content` TEXT NOT NULL,
+  `author_id` INT NOT NULL,
+  `status` ENUM('draft', 'published') DEFAULT 'draft',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`author_id`) REFERENCES `staff_users`(`id`) ON DELETE CASCADE
+);
