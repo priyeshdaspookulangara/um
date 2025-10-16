@@ -37,6 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("sssi", $full_name, $designation, $photo_path, $member_id);
         } else {
             // Create new member
+            if ($_POST['password'] !== $_POST['confirm_password']) {
+                // Handle password mismatch error
+                header("Location: admin_team.php?error=password_mismatch");
+                exit();
+            }
             $username = $_POST['username'];
             $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
             $stmt = $connection->prepare("INSERT INTO staff_users (username, password, full_name, designation, photo_path, is_active) VALUES (?, ?, ?, ?, ?, 1)");
@@ -48,6 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Deleting a team member is equivalent to making them inactive
         $member_id = (int)$_POST['member_id'];
         $stmt = $connection->prepare("UPDATE staff_users SET is_active = 0 WHERE id = ?");
+        $stmt->bind_param("i", $member_id);
+        $stmt->execute();
+        $stmt->close();
+    } elseif (isset($_POST['reactivate_member'])) {
+        $member_id = (int)$_POST['member_id'];
+        $stmt = $connection->prepare("UPDATE staff_users SET is_active = 1 WHERE id = ?");
         $stmt->bind_param("i", $member_id);
         $stmt->execute();
         $stmt->close();
@@ -145,6 +156,11 @@ mysqli_close($connection);
                                             <input type="hidden" name="member_id" value="<?php echo $member['id']; ?>">
                                             <button type="submit" name="delete_member" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to make this member inactive?')">Deactivate</button>
                                         </form>
+                                    <?php else: ?>
+                                        <form action="admin_team.php" method="POST" class="d-inline">
+                                            <input type="hidden" name="member_id" value="<?php echo $member['id']; ?>">
+                                            <button type="submit" name="reactivate_member" class="btn btn-sm btn-outline-success">Reactivate</button>
+                                        </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -175,6 +191,10 @@ mysqli_close($connection);
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
                             <input type="password" class="form-control" id="password" name="password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -212,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var newMemberFields = document.getElementById('new-member-fields');
         var usernameInput = memberModal.querySelector('#username');
         var passwordInput = memberModal.querySelector('#password');
+        var confirmPasswordInput = memberModal.querySelector('#confirm_password');
         var fullNameInput = memberModal.querySelector('#fullName');
         var designationInput = memberModal.querySelector('#designation');
         var existingPhotoPathInput = memberModal.querySelector('#existingPhotoPath');
@@ -222,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
             newMemberFields.style.display = 'none';
             usernameInput.required = false;
             passwordInput.required = false;
+            confirmPasswordInput.required = false;
             memberIdInput.value = memberId;
             fullNameInput.value = button.getAttribute('data-full-name');
             designationInput.value = button.getAttribute('data-designation');
@@ -232,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
             newMemberFields.style.display = 'block';
             usernameInput.required = true;
             passwordInput.required = true;
+            confirmPasswordInput.required = true;
             memberIdInput.value = '';
             fullNameInput.value = '';
             designationInput.value = '';

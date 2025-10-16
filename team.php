@@ -1,14 +1,5 @@
 <?php
-session_start();
 require_once 'db.php';
-
-// Check if the user is logged in, if not then redirect to login page
-if (!isset($_SESSION["user_id"])) {
-    header("Location: login.php");
-    exit();
-}
-
-$full_name = $_SESSION['full_name'];
 
 // --- Team Members Fetcher ---
 $connection = db_connect();
@@ -46,35 +37,28 @@ mysqli_close($connection);
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container-fluid"><a class="navbar-brand" href="dashboard.php">Siva Ganga Dashboard</a></div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="index.php">Siva Ganga</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="team.php">Team</a></li>
+                <li class="nav-item"><a class="nav-link" href="blog.php">Blog</a></li>
+                <li class="nav-item"><a class="nav-link" href="faq.php">FAQ</a></li>
+                <li class="nav-item"><a class="nav-link" href="contact.php">Contact Us</a></li>
+                <li class="nav-item"><a class="nav-link" href="login.php">Staff Login</a></li>
+            </ul>
+        </div>
+    </div>
 </nav>
 
-<div class="container-fluid">
+<div class="container mt-5">
     <div class="row">
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-list-task"></i> My Tasks</a></li>
-                    <li class="nav-item"><a class="nav-link" href="attendance_log.php"><i class="bi bi-calendar-check"></i> Attendance Log</a></li>
-                    <li class="nav-item"><a class="nav-link" href="orders.php"><i class="bi bi-box-seam"></i> Order Management</a></li>
-                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="team.php"><i class="bi bi-people"></i> Team</a></li>
-                </ul>
-                <hr>
-                <div class="dropdown p-3">
-                    <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-2"></i>
-                        <strong><?php echo htmlspecialchars($full_name); ?></strong>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                        <li><a class="dropdown-item" href="logout.php">Sign out</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-5">
+        <main class="col-md-12">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Our Team</h1>
             </div>
