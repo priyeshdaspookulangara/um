@@ -116,6 +116,9 @@ function get_status_badge_class($status) {
                                         <button type="button" class="btn btn-primary btn-sm view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">
                                             View Details
                                         </button>
+                                        <button type="button" class="btn btn-success btn-sm confirm-order-btn" data-order-id="<?php echo $order['order_id']; ?>">
+                                            Confirm
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -146,12 +149,32 @@ function get_status_badge_class($status) {
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to send a confirmation email to the customer?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="send-confirmation-btn">Yes, Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
     var currentOrderId;
     var orderDetailsModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+    var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
 
     // Handle "View Details" button click
     $('.view-details-btn').on('click', function() {
@@ -240,6 +263,35 @@ $(document).ready(function() {
                     errorMsg = xhr.responseJSON.error;
                 }
                 $('#status-update-alert').html(`<div class="alert alert-danger">${errorMsg}</div>`).fadeIn().delay(3000).fadeOut();
+            }
+        });
+    });
+
+    // Handle "Confirm" button click
+    $('.confirm-order-btn').on('click', function() {
+        currentOrderId = $(this).data('order-id');
+        confirmationModal.show();
+    });
+
+    // Handle "Send Confirmation" button click in the modal
+    $('#send-confirmation-btn').on('click', function() {
+        $.ajax({
+            url: 'send_confirmation_email.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ order_id: currentOrderId }),
+            dataType: 'json',
+            success: function(response) {
+                confirmationModal.hide();
+                alert(response.message);
+            },
+            error: function(xhr) {
+                confirmationModal.hide();
+                let errorMsg = 'An unknown error occurred.';
+                if(xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert(errorMsg);
             }
         });
     });

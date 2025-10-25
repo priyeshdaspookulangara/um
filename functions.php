@@ -48,3 +48,59 @@ function assign_task_to_user($task_type, $description, $order_id = null) {
     mysqli_close($connection);
     return false; // No active user found or query failed
 }
+
+/**
+ * Sends an order confirmation email to the customer.
+ *
+ * @param int $order_id The ID of the order.
+ * @return bool True on success, false on failure.
+ */
+function send_order_confirmation_email($order_id) {
+    $connection = db_connect();
+
+    // Fetch order and customer details
+    $query = "
+        SELECT o.order_id, o.order_date, o.total_amount, c.customer_name, c.email
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        WHERE o.order_id = ?
+    ";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $order = mysqli_fetch_assoc($result);
+
+        $to = $order['email'];
+        $subject = "Order Confirmation - Your Order #" . $order['order_id'] . " has been received!";
+        $message = "
+            Dear " . htmlspecialchars($order['customer_name']) . ",
+
+            Thank you for your order. We've received it and are getting it ready for you.
+
+            Order Details:
+            Order ID: " . $order['order_id'] . "
+            Order Date: " . date("Y-m-d H:i", strtotime($order['order_date'])) . "
+            Total Amount: $" . number_format($order['total_amount'], 2) . "
+
+            We will notify you again once your order has shipped.
+
+            Thanks,
+            Siva Ganga Dance Costumes
+        ";
+        $headers = 'From: no-reply@sivaganga.com' . "\r\n" .
+                   'Reply-To: no-reply@sivaganga.com' . "\r\n" .
+                   'X-Mailer: PHP/' . phpversion();
+
+        mysqli_close($connection);
+
+        // Use mail() function to send email
+        return mail($to, $subject, $message, $headers);
+    }
+
+    mysqli_close($connection);
+    return false; // Order not found
+}
