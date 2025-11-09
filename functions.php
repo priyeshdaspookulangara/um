@@ -176,3 +176,45 @@ function send_notification_email($to_address, $subject, $body) {
         return false;
     }
 }
+
+function get_tasks_for_user($connection, $user_id) {
+    $user_id_safe = mysqli_real_escape_string($connection, $user_id);
+    $query = "SELECT id, task_type, description, conversation_status FROM tasks WHERE assigned_user_id = '$user_id_safe' ORDER BY created_at DESC";
+    $result = mysqli_query($connection, $query);
+    $tasks = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $tasks[] = $row;
+        }
+    }
+    return $tasks;
+}
+
+function get_conversation_messages($connection, $task_id) {
+    $task_id_safe = mysqli_real_escape_string($connection, $task_id);
+    $query = "SELECT * FROM conversation_messages WHERE task_id = '$task_id_safe' ORDER BY created_at ASC";
+    $result = mysqli_query($connection, $query);
+    $messages = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $messages[] = $row;
+        }
+    }
+    return $messages;
+}
+
+function is_user_assigned_to_task($connection, $user_id, $task_id) {
+    $user_id_safe = mysqli_real_escape_string($connection, $user_id);
+    $task_id_safe = mysqli_real_escape_string($connection, $task_id);
+    $query = "SELECT id FROM tasks WHERE id = '$task_id_safe' AND assigned_user_id = '$user_id_safe'";
+    $result = mysqli_query($connection, $query);
+    return ($result && mysqli_num_rows($result) > 0);
+}
+
+function send_reply($connection, $task_id, $user_id, $message) {
+    $task_id_safe = mysqli_real_escape_string($connection, $task_id);
+    $user_id_safe = mysqli_real_escape_string($connection, $user_id);
+    $message_safe = mysqli_real_escape_string($connection, $message);
+    $query = "INSERT INTO conversation_messages (task_id, sender_id, sender_type, message) VALUES ('$task_id_safe', '$user_id_safe', 'staff', '$message_safe')";
+    return mysqli_query($connection, $query);
+}

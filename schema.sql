@@ -70,3 +70,14 @@ CREATE TABLE `email_templates` (
   `is_active` TINYINT(1) DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table for messages within a task (conversation)
+CREATE TABLE `conversation_messages` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `task_id` INT NOT NULL,
+  `sender_id` INT NOT NULL,
+  `sender_type` ENUM('staff', 'customer') NOT NULL,
+  `message` TEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE
+);
