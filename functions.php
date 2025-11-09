@@ -1,5 +1,10 @@
 <?php
 require_once 'db.php';
+require_once 'vendor/autoload.php';
+require_once 'TemplateManager.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 /**
  * Finds the staff user with the minimum number of active tasks and assigns a new task to them.
@@ -50,7 +55,30 @@ function assign_task_to_user($task_type, $description, $order_id = null) {
 }
 
 /**
- * Sends an order confirmation email to the customer.
+ * Triggers an email event, fetches the template, substitutes variables, and sends the email.
+ *
+ * @param string $event_name The name of the event (e.g., 'ORDER_CONFIRMED').
+ * @param array $data_array An associative array of data to substitute into the template.
+ * @return bool True on success, false on failure.
+ */
+function trigger_email_event($event_name, $data_array) {
+    $templateManager = new TemplateManager();
+    $template = $templateManager->getTemplateByEvent($event_name);
+
+    if ($template) {
+        $subject = substitute_variables($template['subject'], $data_array);
+        $body = substitute_variables($template['body'], $data_array);
+
+        if (isset($data_array['to_address'])) {
+            return send_notification_email($data_array['to_address'], $subject, $body);
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Sends an order confirmation email to the customer using the new template system.
  *
  * @param int $order_id The ID of the order.
  * @return bool True on success, false on failure.
@@ -60,7 +88,7 @@ function send_order_confirmation_email($order_id) {
 
     // Fetch order and customer details
     $query = "
-        SELECT o.order_id, o.order_date, o.total_amount, c.customer_name, c.email
+        SELECT o.order_id, o.order_date, o.total_amount, c.customer_name, c.email, c.phone
         FROM orders o
         JOIN customers c ON o.customer_id = c.customer_id
         WHERE o.order_id = ?
@@ -73,34 +101,78 @@ function send_order_confirmation_email($order_id) {
 
     if ($result && mysqli_num_rows($result) > 0) {
         $order = mysqli_fetch_assoc($result);
-
-        $to = $order['email'];
-        $subject = "Order Confirmation - Your Order #" . $order['order_id'] . " has been received!";
-        $message = "
-            Dear " . htmlspecialchars($order['customer_name']) . ",
-
-            Thank you for your order. We've received it and are getting it ready for you.
-
-            Order Details:
-            Order ID: " . $order['order_id'] . "
-            Order Date: " . date("Y-m-d H:i", strtotime($order['order_date'])) . "
-            Total Amount: $" . number_format($order['total_amount'], 2) . "
-
-            We will notify you again once your order has shipped.
-
-            Thanks,
-            Siva Ganga Dance Costumes
-        ";
-        $headers = 'From: no-reply@sivaganga.com' . "\r\n" .
-                   'Reply-To: no-reply@sivaganga.com' . "\r\n" .
-                   'X-Mailer: PHP/' . phpversion();
-
         mysqli_close($connection);
 
-        // Use mail() function to send email
-        return mail($to, $subject, $message, $headers);
+        $data_array = [
+            'to_address' => $order['email'],
+            'cust_name' => $order['customer_name'],
+            'order_id' => $order['order_id'],
+            'order_date' => date("Y-m-d H:i", strtotime($order['order_date'])),
+            'total_amount' => number_format($order['total_amount'], 2),
+            'phone_number' => $order['phone'],
+            'delivery_address' => '123 Main St, Anytown, USA', // Placeholder
+            'today' => date("Y-m-d"),
+            'product' => 'Assorted Dance Costumes' // Placeholder
+        ];
+
+        return trigger_email_event('ORDER_CONFIRMED', $data_array);
     }
 
     mysqli_close($connection);
     return false; // Order not found
+}
+
+/**
+ * Substitutes variables in a template with the provided data.
+ *
+ * @param string $template_body The template body with placeholders.
+ * @param array $data_array An associative array where keys are variable names and values are the data.
+ * @return string The template body with variables substituted.
+ */
+function substitute_variables($template_body, $data_array) {
+    foreach ($data_array as $key => $value) {
+        $template_body = str_replace('{{' . $key . '}}', $value, $template_body);
+    }
+    // Remove any remaining unresolved placeholders
+    $template_body = preg_replace('/\{\{.*?\}\}/', '', $template_body);
+    return $template_body;
+}
+
+/**
+ * Sends an email using PHPMailer.
+ *
+ * @param string $to_address The recipient's email address.
+ * @param string $subject The email subject.
+ * @param string $body The email body.
+ * @return bool True on success, false on failure.
+ */
+function send_notification_email($to_address, $subject, $body) {
+    $mail = new PHPMailer(true);
+
+    try {
+        //Server settings
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USERNAME;
+        $mail->Password   = SMTP_PASSWORD;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
+
+        //Recipients
+        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        $mail->addAddress($to_address);
+
+        //Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        // Log the error message
+        error_log("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
+        return false;
+    }
 }

@@ -59,3 +59,14 @@ CREATE TABLE `attendance` (
   UNIQUE KEY `user_day` (`user_id`, `login_date`),
   FOREIGN KEY (`user_id`) REFERENCES `staff_users`(`id`) ON DELETE CASCADE
 );
+
+-- Table for email templates
+CREATE TABLE `email_templates` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) UNIQUE NOT NULL,
+  `subject` VARCHAR(255) NOT NULL,
+  `body` TEXT NOT NULL,
+  `associated_event` VARCHAR(255) NOT NULL,
+  `is_active` TINYINT(1) DEFAULT 1,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
