@@ -16,7 +16,7 @@ $connection = db_connect();
 
 // 1. Drop existing tables in the correct order to avoid foreign key constraint issues
 echo "<h2>Step 1: Dropping existing tables...</h2>";
-$tables = ['attendance', 'order_details', 'tasks', 'orders', 'customers', 'staff_users'];
+$tables = ['attendance', 'order_details', 'tasks', 'orders', 'customers', 'staff_users', 'customer_showcases'];
 foreach ($tables as $table) {
     if (mysqli_query($connection, "DROP TABLE IF EXISTS `$table`")) {
         echo_message("Table `$table` dropped successfully.");
@@ -125,6 +125,21 @@ foreach ($tasks as $task) {
     } else {
         echo_message("Failed to assign task '{$task[1]}'.", false);
     }
+}
+
+// 7. Seed customer_showcases table
+echo "<h2>Step 7: Seeding 'customer_showcases' table...</h2>";
+$showcases = [
+    ['Elegant Kuchipudi Dancer', 'A mesmerizing performance by one of our esteemed clients, showcasing the vibrant colors and intricate details of our Kuchipudi costume.', 'uploads/showcase1.jpg'],
+    ['Bharatanatyam Recital', 'A powerful and graceful Bharatanatyam recital. The dancer is adorned in a custom-designed costume from our collection.', 'uploads/showcase2.jpg'],
+    ['Kathakali Performance', 'A stunning Kathakali performance, featuring our traditional costume and elaborate headgear.', 'uploads/showcase3.jpg']
+];
+foreach ($showcases as $showcase) {
+    $title = mysqli_real_escape_string($connection, $showcase[0]);
+    $description = mysqli_real_escape_string($connection, $showcase[1]);
+    $image_url = mysqli_real_escape_string($connection, $showcase[2]);
+    $query = "INSERT INTO customer_showcases (title, description, image_url) VALUES ('$title', '$description', '$image_url')";
+    mysqli_query($connection, $query) ? echo_message("Showcase '{$showcase[0]}' created.") : echo_message("Failed to create showcase '{$showcase[0]}'.", false);
 }
 
 echo "<h2>Installation Complete!</h2>";
