@@ -92,6 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="btn btn-primary">Login</button>
                 </div>
             </form>
+            <div class="text-center mt-3">
+                <a href="customer_gallery.php">View Customer Gallery</a>
+            </div>
         </div>
     </div>
 

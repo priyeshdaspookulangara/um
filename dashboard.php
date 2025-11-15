@@ -36,7 +36,22 @@ $full_name = $_SESSION['full_name'];
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container-fluid"><a class="navbar-brand" href="dashboard.php">Staff Edge</a></div>
+    <div class="container-fluid">
+        <a class="navbar-brand" href="dashboard.php">Staff Edge</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="dashboard.php">Conversations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="showcases.php">Showcases</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="logout.php">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
 </nav>
 
 <div class="container-fluid">

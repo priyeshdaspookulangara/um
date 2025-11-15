@@ -1,0 +1,8 @@
+# Log files
+*.log
+
+# Vendor directories
+/vendor/
+
+# User-uploaded content
+/uploads/
