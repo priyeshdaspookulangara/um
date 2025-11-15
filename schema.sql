@@ -81,3 +81,15 @@ CREATE TABLE `conversation_messages` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE
 );
+
+-- Table for the costume showcase
+CREATE TABLE `costumes` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `description` TEXT NOT NULL,
+  `image_path` VARCHAR(255) NOT NULL,
+  `colors` VARCHAR(255) DEFAULT NULL,
+  `pant_type` VARCHAR(100) DEFAULT NULL,
+  `fan_type` VARCHAR(100) DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -16,7 +16,7 @@ $connection = db_connect();
 
 // 1. Drop existing tables in the correct order to avoid foreign key constraint issues
 echo "<h2>Step 1: Dropping existing tables...</h2>";
-$tables = ['attendance', 'order_details', 'tasks', 'orders', 'customers', 'staff_users'];
+$tables = ['attendance', 'order_details', 'tasks', 'orders', 'customers', 'staff_users', 'costumes'];
 foreach ($tables as $table) {
     if (mysqli_query($connection, "DROP TABLE IF EXISTS `$table`")) {
         echo_message("Table `$table` dropped successfully.");
