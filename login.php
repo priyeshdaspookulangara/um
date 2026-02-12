@@ -20,25 +20,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $connection = db_connect();
 
-        // IMPORTANT: Non-prepared statement as requested.
-        $username_safe = mysqli_real_escape_string($connection, $username);
-        $password_safe = mysqli_real_escape_string($connection, $password);
+        $stmt = $connection->prepare("SELECT id, username, password, full_name FROM staff_users WHERE username = ? AND is_active = 1");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        $query = "SELECT id, username, full_name FROM staff_users WHERE username = '$username_safe' AND password = '$password_safe' AND is_active = 1";
+        if ($result && $result->num_rows === 1) {
+            $user = $result->fetch_assoc();
 
-        $result = mysqli_query($connection, $query);
+            if (password_verify($password, $user['password'])) {
+                // Store user data in session
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'];
 
-        if ($result && mysqli_num_rows($result) === 1) {
-            $user = mysqli_fetch_assoc($result);
-
-            // Store user data in session
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['full_name'] = $user['full_name'];
-
-            // Redirect to dashboard, which will handle attendance
-            header("Location: dashboard.php");
-            exit();
+                // Redirect to dashboard, which will handle attendance
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                $error_message = "Invalid username or password.";
+            }
         } else {
             $error_message = "Invalid username or password.";
         }
